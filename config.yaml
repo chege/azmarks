@@ -1,0 +1,13 @@
+filter_type: include  # Options: 'include' or 'exclude'
+resources:
+  - Microsoft.Compute/virtualMachines  # Virtual Machines
+  - Microsoft.Storage/storageAccounts  # Storage Accounts
+  - Microsoft.DBforPostgreSQL/flexibleServers  # Flexible PostgreSQL Servers
+  - Microsoft.KeyVault/vaults  # Azure Key Vault
+  - Microsoft.Network/loadBalancers  # Load Balancers
+  - Microsoft.Network/virtualNetworks  # Virtual Networks
+  - Microsoft.App/containerApps  # Container Apps
+  - Microsoft.Insights/components  # Application Insights
+  - Microsoft.Sql/servers  # SQL Servers
+include_metadata: false  # Set to true to include resource type and region in bookmark titles
+structure: "{subscription}/{resource_type}/{resource}"  # Defines the structure of the bookmarks
