@@ -1,22 +1,63 @@
+import logging
+import os
 import sys
+
 import click
-import yaml
-import importlib
-import pkgutil
-import logging  # Import the logging module
-from azure.identity import AzureCliCredential, InteractiveBrowserCredential
-from azure.mgmt.resource import ResourceManagementClient, SubscriptionClient
-from azure_bookmarks_tool import browsers
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from azure_bookmarks_tool.azure import authenticate, get_resources
+from azure_bookmarks_tool.config import load_config
+from azure_bookmarks_tool.transform import transform
 
 # Setup logging configuration
 logger = logging.getLogger(__name__)
+
+
+def load_browser_plugins():
+    """
+    Placeholder function to load browser plugins.
+    Implement this function based on your plugin architecture.
+    """
+    return {"safari": SafariBookmarkPlugin}  # Replace with actual plugin class
+
+
+def render_bookmarks_html(bookmarks, title="Azure Bookmarks"):
+    """
+    Renders the bookmarks to an HTML string using the Jinja2 template.
+
+    :param bookmarks: The transformed bookmarks data structure.
+    :param title: The title for the bookmarks HTML.
+    :return: A string containing the rendered HTML.
+    """
+    template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+    env = Environment(
+        loader=FileSystemLoader(template_dir),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+    template = env.get_template("safari.html")
+    return template.render(title=title, bookmarks=bookmarks)
+
+
+def generate_bookmarks(transformed_tree, config, output_filename="bookmarks.html"):
+    """
+    Generates HTML bookmarks file from the transformed data.
+
+    :param transformed_tree: The transformed bookmarks data structure.
+    :param config: The configuration dictionary.
+    :param output_filename: The name of the output HTML file.
+    """
+    title = "Azure Bookmarks"
+    rendered_html = render_bookmarks_html(transformed_tree, title)
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write(rendered_html)
+    logger.info(f"Bookmarks generated successfully in '{output_filename}'")
 
 
 def setup_logging(verbose: int):
     """
     Configures logging based on the verbosity level.
     """
-    log_level = logging.WARNING  # Default log level
+    log_level = logging.WARNING
     if verbose == 1:
         log_level = logging.INFO
     elif verbose >= 2:
@@ -24,118 +65,17 @@ def setup_logging(verbose: int):
 
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
     logger.debug(f"Logging configured. Level: {logging.getLevelName(log_level)}")
-
-
-def load_plugins():
-    logger.debug("Loading plugins...")
-    plugins = {}
-    for _, module_name, _ in pkgutil.iter_modules(browsers.__path__):
-        module = importlib.import_module(f"azure_bookmarks_tool.browsers.{module_name}")
-        logger.debug(f"Imported module: {module_name}")
-        for attr in dir(module):
-            cls = getattr(module, attr)
-            if isinstance(cls, type) and hasattr(cls, "name") and hasattr(cls, "generate_bookmarks"):
-                plugins[cls.name.lower()] = cls
-                logger.debug(f"Registered plugin: {cls.name}")
-    logger.info(f"Total plugins loaded: {len(plugins)}")
-    return plugins
-
-
-def load_config():
-    logger.debug("Loading configuration from 'config.yaml'...")
-    try:
-        with open("config.yaml", "r") as file:
-            config = yaml.safe_load(file)
-            logger.debug(f"Configuration loaded: {config}")
-            return config
-    except FileNotFoundError:
-        logger.error("Configuration file 'config.yaml' not found.")
-        sys.exit(1)
-    except yaml.YAMLError as e:
-        logger.error(f"Error parsing 'config.yaml': {e}")
-        sys.exit(1)
-
-
-def authenticate(force_reauth):
-    logger.debug(f"Authenticating. Force reauth: {force_reauth}")
-
-    if force_reauth:
-        logger.info("Forcing re-authentication using InteractiveBrowserCredential.")
-        credential = InteractiveBrowserCredential()
-    else:
-        try:
-            logger.debug("Attempting to authenticate using AzureCliCredential.")
-            credential = AzureCliCredential()
-            # Test the credential
-            subscription_client = SubscriptionClient(credential)
-            list(subscription_client.subscriptions.list())
-            logger.info("Authenticated using Azure CLI credentials.")
-        except Exception as e:
-            logger.warning(f"Azure CLI authentication failed: {e}. Falling back to InteractiveBrowserCredential.")
-            credential = InteractiveBrowserCredential()
-    return credential
-
-
-def get_resources(credential, config):
-    logger.debug("Fetching resources from Azure subscriptions...")
-
-    subscription_client = SubscriptionClient(credential)
-    resources = []
-
-    for subscription in subscription_client.subscriptions.list():
-        subscription_id = subscription.subscription_id
-        subscription_name = subscription.display_name
-
-        logger.debug(f"Processing subscription: {subscription_name} ({subscription_id})")
-
-        resource_client = ResourceManagementClient(credential, subscription_id)
-
-        try:
-            for resource in resource_client.resources.list():
-                resource_type = resource.type
-                resource_name = resource.name
-                logger.debug(f"Found resource: {resource_name} of type {resource_type}")
-
-                # Apply filtering based on config
-                filter_type = config.get("filter_type")
-                resource_filters = config.get("resources", [])
-                if filter_type == "include" and resource_type not in resource_filters:
-                    logger.debug(
-                        f"Excluding resource '{resource_name}' of type '{resource_type}' based on 'include' filter.")
-                    continue
-                if filter_type == "exclude" and resource_type in resource_filters:
-                    logger.debug(
-                        f"Excluding resource '{resource_name}' of type '{resource_type}' based on 'exclude' filter.")
-                    continue
-
-                resources.append(
-                    {
-                        "subscription_name": subscription_name,
-                        "subscription": subscription_name,
-                        "resource_type": resource_type,
-                        "resource_name": resource_name,
-                        "resource": resource_name,
-                        "resource_id": resource.id,
-                        "location": resource.location,
-                    }
-                )
-        except Exception as e:
-            logger.error(f"Failed to list resources for subscription '{subscription_name}': {e}")
-    logger.info(f"Total resources fetched: {len(resources)}")
-    return resources
 
 
 @click.command(context_settings={"ignore_unknown_options": True})
 @click.option(
     "--force-reauth",
     is_flag=True,
-    help="Force re-authentication, bypassing existing login session."
+    help="Force re-authentication, bypassing existing login session.",
 )
 @click.option(
     "--browser",
@@ -145,57 +85,44 @@ def get_resources(credential, config):
     "-v",
     "--verbose",
     count=True,
-    help="Increase verbosity of logging output. Use -v for INFO, -vv for DEBUG."
+    help="Increase verbosity of logging output. Use -v for INFO, -vv for DEBUG.",
 )
 def main(force_reauth, browser, verbose):
-    """Azure Bookmarks Tool CLI with dynamically loaded browser plugins."""
-
     # Setup logging based on verbosity
     setup_logging(verbose)
     logger.debug("Starting the Azure Bookmarks Tool...")
 
-    # Load all available plugins dynamically
-    plugins = load_plugins()
-
-    if not plugins:
-        logger.error("No browser plugins found.")
-        raise click.UsageError("No browser plugins found.")
-
-    # If no browser option is provided, list available browsers
-    if browser is None:
-        click.echo("Please specify a browser. Available browsers are:")
-        for name, plugin_class in plugins.items():
-            click.echo(f"--{name}: {plugin_class.description}")
-        sys.exit(1)
-
-    # Load the selected plugin
-    plugin_class = plugins.get(browser.lower())
-    if plugin_class is None:
-        click.echo(f"Browser plugin '{browser}' not found.")
-        sys.exit(1)
-
-    logger.info(f"Selected browser plugin: {browser}")
-
+    # Load configuration
     config = load_config()
-    filter_type = config.get("filter_type")
 
-    if filter_type not in ["include", "exclude"]:
-        logger.error("Invalid 'filter_type' in config.yaml. Must be either 'include' or 'exclude'.")
-        raise click.UsageError("Error: 'filter_type' in config.yaml must be either 'include' or 'exclude'.")
+    # Check if resource and subscription filters are correctly specified
+    if "resource_filter" not in config or "subscription_filter" not in config:
+        raise click.UsageError(
+            "Error: Configuration must include both 'resource_filter' and 'subscription_filter'."
+        )
 
+    # Authenticate
     credential = authenticate(force_reauth)
+
+    # Fetch resources based on configuration filters
     resources = get_resources(credential, config)
+    logger.info(f"Generating bookmarks for {len(resources)} resources.")
 
-    logger.info(f"Generating bookmarks for {len(resources)} resources using '{browser}' plugin.")
+    # Transform the data into the desired structure
+    transformed_tree = transform(resources, config)
 
-    # Instantiate the selected plugin and generate bookmarks
-    plugin = plugin_class()
-    try:
-        plugin.generate_bookmarks(resources, config)
-        logger.info("Bookmarks generated successfully.")
-    except Exception as e:
-        logger.error(f"Failed to generate bookmarks: {e}")
-        sys.exit(1)
+    # Generate the bookmarks HTML
+    generate_bookmarks(transformed_tree, config)
+    logger.info("Bookmarks generated successfully.")
+
+
+# Placeholder for the SafariBookmarkPlugin class
+class SafariBookmarkPlugin:
+    description = "Safari Browser"
+
+    def generate_bookmarks(self, resources, config):
+        transformed_tree = transform(resources, config)
+        generate_bookmarks(transformed_tree, config)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,36 @@
-filter_type: include  # Options: 'include' or 'exclude'
-resources:
-  - Microsoft.Compute/virtualMachines  # Virtual Machines
-  - Microsoft.Storage/storageAccounts  # Storage Accounts
-  - Microsoft.DBforPostgreSQL/flexibleServers  # Flexible PostgreSQL Servers
-  - Microsoft.KeyVault/vaults  # Azure Key Vault
-  - Microsoft.Network/loadBalancers  # Load Balancers
-  - Microsoft.Network/virtualNetworks  # Virtual Networks
-  - Microsoft.App/containerApps  # Container Apps
-  - Microsoft.Insights/components  # Application Insights
-  - Microsoft.Sql/servers  # SQL Servers
+resource_filter:
+  filter_type: include  # Options: 'include' or 'exclude'
+  resources:
+    - Microsoft.Compute/virtualMachines         # Virtual Machines
+    - Microsoft.Storage/storageAccounts         # Storage Accounts
+    - Microsoft.DBforPostgreSQL/flexibleServers # Flexible PostgreSQL Servers
+    - Microsoft.KeyVault/vaults                 # Azure Key Vault
+    - Microsoft.Network/loadBalancers           # Load Balancers
+    - Microsoft.Network/virtualNetworks         # Virtual Networks
+    - Microsoft.App/containerApps               # Container Apps
+    - Microsoft.Insights/components             # Application Insights
+    - Microsoft.Sql/servers                     # SQL Servers
+
+subscription_filter:
+  filter_type: include  # Options: 'include' or 'exclude'
+  subscriptions:
+    - e547c264-63ee-40e5-90e0-cdb0fcac561a
+    - 62bbda97-77d1-43c1-9ef4-39b78d3c1850
+    - b091d732-c3f5-4876-981a-4482f54bb5d0
+
 include_metadata: false  # Set to true to include resource type and region in bookmark titles
-structure: "{subscription}/{resource_type}/{resource}"  # Defines the structure of the bookmarks
+base_url: https://portal.azure.com/#@example.onmicrosoft.com
+
+links:
+  - overview: /resource/subscriptions/{subscription_id}/overview
+  - resources: /resource/subscriptions/{subscription_id}/resources
+  - deployments: /resource/subscriptions/{subscription_id}/subdeployments
+  - resource: /resource/subscriptions/{subscription_id}/resourceGroups/{resource_group}/providers/{provider}/{resource_type}/{resource_name}/
+
+structure:
+  - '{field:subscription_name}':  # Folder with the subscription name
+      - Overview: '{link:overview}'             # Link with title 'Overview'
+      - Resources: '{link:resources}'
+      - Deployments: '{link:deployments}'
+      - '{field:resource_type}':                # Folder per resource type, titled as the resource type
+          - '{field:resource_name}': '{link:resource}'  # Link per resource, title is resource name

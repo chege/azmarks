@@ -1,0 +1,22 @@
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<HTML>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>{{ title }}</TITLE>
+<H1>{{ title }}</H1>
+<DL><p>
+    {% macro render_items(items) %}
+        {% for key, value in items.items() %}
+            {% if value is mapping %}
+                <DT><H3 FOLDED>{{ key }}</H3>
+                <DL><p>
+                    {{ render_items(value) }}
+                </DL><p>
+            {% else %}
+                <DT><A HREF="{{ value }}">{{ key }}</A>
+            {% endif %}
+        {% endfor %}
+    {% endmacro %}
+
+    {{ render_items(bookmarks) }}
+</DL><p>
+</HTML>
