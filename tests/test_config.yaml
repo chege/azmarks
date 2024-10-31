@@ -1,0 +1,25 @@
+filter_type: include  # Options: 'include' or 'exclude'
+resources:
+  - Microsoft.Compute/virtualMachines  # Virtual Machines
+  - Microsoft.Storage/storageAccounts  # Storage Accounts
+  - Microsoft.DBforPostgreSQL/flexibleServers  # Flexible PostgreSQL Servers
+  - Microsoft.KeyVault/vaults  # Azure Key Vault
+  - Microsoft.Network/loadBalancers  # Load Balancers
+  - Microsoft.Network/virtualNetworks  # Virtual Networks
+  - Microsoft.App/containerApps  # Container Apps
+  - Microsoft.Insights/components  # Application Insights
+  - Microsoft.Sql/servers  # SQL Servers
+
+base_url: https://portal.azure.com/#@ksatno.onmicrosoft.com
+links:
+  - overview: /resource/subscriptions/{subscription_id}/overview
+  - resources: /resource/subscriptions/{subscription_id}/resources
+  - deployments: /resource/subscriptions/{subscription_id}/subdeployments
+  - resource: /resource/subscriptions/{subscription_id}/resourceGroups/{resource_group}/providers/{provider}/{resource_type}/{resource_name}/
+structure:
+  - '{field:subscription_name}':
+      - Overview: '{link:overview}'
+      - Resources: '{link:resources}'
+      - Deployments: '{link:deployments}'
+      - '{field:resource_type}':
+          - '{field:resource_name}': '{link:resource}'

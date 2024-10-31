@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "azure-bookmarks-tool"
 version = "0.1.0"
-description = ""
+description = "Generates a bookmarks file for Azure resources, organizing resource links for quick access and reference."
 authors = ["Christopher Egebakken <christophere@ksat.no>"]
 readme = "README.md"
 
@@ -9,7 +9,9 @@ readme = "README.md"
 python = "^3.11"
 azure-identity = "^1.19.0"
 azure-mgmt-resource = "^23.1.1"
+beautifulsoup4 = "^4.12.3"
 click = "^8.1.7"
+jinja2 = "^3.1.4"
 pyyaml = "^6.0.2"
 
 [tool.poetry.group.dev.dependencies]
