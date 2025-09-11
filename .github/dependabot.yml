@@ -15,15 +15,29 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
-    open-pull-requests-limit: 1
+    allow:
+      - dependency-type: "direct"
+    open-pull-requests-limit: 2
     groups:
-      python-dependencies:
+      app-and-dev-deps:
+        # Catch all application + dev dependencies except core tooling
         patterns:
-          - "^python"
-          - "^pip"
-          - "^setuptools"
-          - "^wheel"
-          - "^poetry"
+          - "*"
+        exclude-patterns:
+          - "python"
+          - "pip"
+          - "setuptools"
+          - "wheel"
+          - "poetry"
+
+      tooling:
+        # Pin updates to Python/pip/build tooling into a separate PR
+        patterns:
+          - "python"
+          - "pip"
+          - "setuptools"
+          - "wheel"
+          - "poetry"
 
   # Keep GitHub Actions workflows up to date
   - package-ecosystem: "github-actions"
