@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "*-dev", "*/*" ]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  POETRY_VIRTUALENVS_CREATE: "true"
+  POETRY_VIRTUALENVS_IN_PROJECT: "true"
+
+jobs:
+  lint:
+    name: Lint (black + isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: >-
+            v1-${{ runner.os }}-py311-
+            ${{ hashFiles('poetry.lock') }}-
+            ${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            v1-${{ runner.os }}-py311-
+
+      - name: Install deps (with dev)
+        run: poetry install --no-interaction --no-root --with dev
+
+      - name: Run black
+        run: poetry run black --check .
+
+      - name: Run isort
+        run: poetry run isort --check-only .
+
+  test:
+    name: Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.11", "3.12" ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+            ~/.cache/pypoetry
+          key: >-
+            v1-${{ runner.os }}-py${{ matrix.python-version }}-
+            ${{ hashFiles('poetry.lock') }}-
+            ${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            v1-${{ runner.os }}-py${{ matrix.python-version }}-
+
+      - name: Install deps (with dev)
+        run: poetry install --no-interaction --no-root --with dev
+
+      - name: Run tests
+        run: poetry run pytest -q
