@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Keep Poetry dependencies (pyproject.toml) up to date
+  - package-ecosystem: "pip"
+    directory: "/"              # Location of pyproject.toml
+    schedule:
+      interval: "weekly"        # Options: daily, weekly, monthly
+      day: "sunday"             # Run weekly on Sundays
+      time: "04:00"             # UTC
+    labels:
+      - "dependencies"
+      - "python"
+    reviewers:
+      - "chege"                 # Assign you automatically
+    commit-message:
+      prefix: "chore"
+
+  # Keep GitHub Actions workflows up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    labels:
+      - "ci"
+      - "dependencies"
+    reviewers:
+      - "chege"
+    commit-message:
+      prefix: "chore"
