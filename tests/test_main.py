@@ -1,7 +1,7 @@
 import pytest
 from bs4 import BeautifulSoup
 
-from azure_bookmarks_tool.main import render_bookmarks_html
+from azmarks.main import render_bookmarks_html
 
 
 def test_render_bookmarks_html():

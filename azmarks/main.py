@@ -5,9 +5,9 @@ import sys
 import click
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from azure_bookmarks_tool.azure import authenticate, get_resources
-from azure_bookmarks_tool.config import load_config
-from azure_bookmarks_tool.transform import transform
+from azmarks.azure import authenticate, get_resources
+from azmarks.config import load_config
+from azmarks.transform import transform
 
 # Setup logging configuration
 logger = logging.getLogger(__name__)
