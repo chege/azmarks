@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "azure-bookmarks-tool"
+name = "azmarks"
 version = "0.1.0"
 description = "Generates a bookmarks file for Azure resources, organizing resource links for quick access and reference."
 authors = ["chege"]
@@ -20,7 +20,7 @@ isort = "^5.13.2"
 pytest = "^8.3.3"
 
 [tool.poetry.scripts]
-azure-bookmarks-tool = "azure_bookmarks_tool.__main__:main"
+azmarks = "azmarks.__main__:main"
 
 [build-system]
 requires = ["poetry-core"]

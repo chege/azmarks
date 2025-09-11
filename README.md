@@ -1,4 +1,4 @@
-# Azure Bookmarks Tool
+# Azmarks
 
 A CLI tool to generate organized bookmark files for Azure resources, streamlining access to resource links within a
 hierarchical structure.
@@ -41,10 +41,10 @@ poetry install
 
 ### Running the Tool
 
-Execute `azure-bookmarks-tool` to generate a bookmarks file:
+Execute `azmarks` to generate a bookmarks file:
 
 ```bash
-poetry run azure-bookmarks-tool --verbose
+poetry run azmarks --verbose
 ```
 
 ### Optional flags:

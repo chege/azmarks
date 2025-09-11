@@ -1,4 +1,4 @@
-from azure_bookmarks_tool.transform import transform
+from azmarks.transform import transform
 
 
 def test_transform_1():
